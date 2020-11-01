@@ -55,7 +55,7 @@ func resourceAwsTransferServer() *schema.Resource {
 						"vpc_endpoint_id": {
 							Type:          schema.TypeString,
 							Optional:      true,
-							ConflictsWith: []string{"endpoint_details.0.address_allocation_ids", "endpoint_details.0.subnet_ids", "endpoint_details.0.vpc_id"},
+							ConflictsWith: []string{"endpoint_details.0.address_allocation_ids", "endpoint_details.0.subnet_ids", "endpoint_details.0.vpc_id", "endpoint_details.0.security_group_ids"},
 							Computed:      true,
 						},
 						"address_allocation_ids": {
@@ -76,6 +76,13 @@ func resourceAwsTransferServer() *schema.Resource {
 							Type:          schema.TypeString,
 							Optional:      true,
 							ValidateFunc:  validation.NoZeroValues,
+							ConflictsWith: []string{"endpoint_details.0.vpc_endpoint_id"},
+						},
+						"security_group_ids": {
+							Type:          schema.TypeSet,
+							Optional:      true,
+							Elem:          &schema.Schema{Type: schema.TypeString},
+							Set:           schema.HashString,
 							ConflictsWith: []string{"endpoint_details.0.vpc_endpoint_id"},
 						},
 					},
@@ -501,6 +508,10 @@ func expandTransferServerEndpointDetails(l []interface{}) *transfer.EndpointDeta
 		out.VpcId = aws.String(v)
 	}
 
+	if v, ok := e["security_group_ids"].(*schema.Set); ok && v.Len() > 0 {
+		out.SecurityGroupIds = expandStringSet(v)
+	}
+
 	return out
 }
 
@@ -521,6 +532,9 @@ func flattenTransferServerEndpointDetails(endpointDetails *transfer.EndpointDeta
 	}
 	if endpointDetails.VpcId != nil {
 		e["vpc_id"] = aws.StringValue(endpointDetails.VpcId)
+	}
+	if endpointDetails.SecurityGroupIds != nil {
+		e["security_group_ids"] = flattenStringSet(endpointDetails.SecurityGroupIds)
 	}
 
 	return []interface{}{e}
