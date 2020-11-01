@@ -766,7 +766,6 @@ resource "aws_transfer_server" "test" {
     address_allocation_ids = [aws_eip.testa.id]
     subnet_ids             = [aws_subnet.test.id]
 	vpc_id                 = aws_vpc.test.id
-	security_group_ids 	   = [aws_security_group.test.id]
   }
 }
 `
@@ -779,7 +778,28 @@ resource "aws_transfer_server" "test" {
     address_allocation_ids = [aws_eip.testb.id]
     subnet_ids             = [aws_subnet.test.id]
 	vpc_id                 = aws_vpc.test.id
-	security_group_ids 	   = [aws_security_group.test.id]
+  }
+}
+`
+
+const testAccAWSTransferServerConfig_MultipleSg = testAccAWSTransferServerConfig_VpcDefault + `
+resource "aws_security_group" "second_test" {
+	name   = "terraform-testacc-security-group_second"
+	vpc_id = aws_vpc.test.id
+  
+	tags = {
+	  Name = "terraform-testacc-security-group_second"
+	}
+  }
+
+resource "aws_transfer_server" "test" {
+  endpoint_type = "VPC"
+
+  endpoint_details {
+    address_allocation_ids = [aws_eip.testb.id]
+    subnet_ids             = [aws_subnet.test.id]
+	vpc_id                 = aws_vpc.test.id
+	security_group_ids 	   = [aws_security_group.test.id, aws_security_group.second_test.id]
   }
 }
 `
